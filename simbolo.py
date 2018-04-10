@@ -41,3 +41,7 @@ TOKENS = {
     'FALSE' : 286,
     'TRUE' : 287
     }
+
+CONST_TOKENS = {}
+for key,value in TOKENS.items():
+    CONST_TOKENS[value]=key
