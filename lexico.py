@@ -116,14 +116,15 @@ class Lexico:
                 self.leer_lexema()
                 return Simbolo(self.Lexema, TOKENS['MAY'])
             elif self.estado == 9:
-                if c.isalpha():
+                if c.isalpha():     # Regresa verdadero si c es una letra.
                     self.estado = 10
                 else:
                     self.estado = self.fallo()
             elif self.estado == 10:
                 c = self.siguiente_caracter()
-                if not c.isalnum():
-                    self.estado = 11
+                if c.isalnum():
+                    if not c.isalnum():
+                        self.estado = 11
             elif self.estado == 11:
                 self.regresa_caracter()
                 self.leer_lexema()
@@ -136,7 +137,7 @@ class Lexico:
                 return None
 
     def fallo(self):
-        if self.estado <= 9:
+        if self.estado < 9:
             return 9
-        elif self.estado <= 13:
-            return 13
+        elif self.estado < 12:
+            return 12
