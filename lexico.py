@@ -20,13 +20,14 @@ class Lexico:
     def insertar_simbolo(self, simbolo):    #inserta un nuevo simbolor en la TS.
         if simbolo:
             self.tablaSimb.append(simbolo)
+            return self.tablaSimb[len(self.tablaSimb)-1]
         else:
             raise ValueError("Se esperaba un simbolo")
 
     def cargar_palabras_reservadas(self):   #Carga las palabras reservadas en TS
         for p in palabras_reservadas:
             self.insertar_simbolo(Simbolo(p, TOKENS[p.upper()]))
-# -*- coding: utf-8 -*-
+
     def mostrar_tabla_simbolos(self):       #muestra el contenido de la TS.
         for s in self.tablaSimb:
             print(s)
@@ -51,8 +52,7 @@ class Lexico:
 
     def leer_lexema(self):                  #regresa la cadena que se encuentra
         self.Lexema = self.codigo[self.inicioLex:self.index + 1]
-        self.inicioLex = 0                  #entre inicioLex y el index.
-        self.estado = 0
+        self.estado = 0                     #entre inicioLex y el index.
         self.avanza_inicio_lexema()
         return self.Lexema
 
@@ -66,11 +66,11 @@ class Lexico:
         while(True):                        #trado en el codigo fuente.
             if self.estado == 0:
                 c = self.siguiente_caracter()
+
                 if c ==' ' or c =='\t' or c == '\n':
-                    self.avanza_inicio_lexema()
-                    if c == '\t' or c == '\n':
-                        self.num_linea += 1
-                    self.avanza_inicio_lexema()
+                    self.avanza_inicio_lexema() #Ignorar todo tipo de espacios
+                    if c == '\n':               #en blanco
+                        self.num_linea += 1     #incrementar num_line en enter.
                 elif c == '\0':
                     return None
                 elif c == '<':
@@ -80,10 +80,10 @@ class Lexico:
                 elif c == '>':
                     self.estado = 6
                 else:
-                    self.estado = self.fallo()
+                    self.estado = self.fallo()  #Probar el siguiente automata.
             elif self.estado == 1:
-                c = self.siguiente_caracter()
-                if c == '=':
+                c = self.siguiente_caracter()   #Todos los estados intermedios
+                if c == '=':                    #deben llamar a siguiente_caracter
                     self.estado = 2
                 elif c == '>':
                     self.estado = 3
@@ -115,5 +115,28 @@ class Lexico:
                 self.regresa_caracter()
                 self.leer_lexema()
                 return Simbolo(self.Lexema, TOKENS['MAY'])
+            elif self.estado == 9:
+                if c.isalpha():
+                    self.estado = 10
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 10:
+                c = self.siguiente_caracter()
+                if not c.isalnum():
+                    self.estado = 11
+            elif self.estado == 11:
+                self.regresa_caracter()
+                self.leer_lexema()
+                simbolo = self.buscar_lexema(self.Lexema)
+                if simbolo:
+                    return simbolo
+                else:
+                    return self.insertar_simbolo(Simbolo(self.Lexema, TOKENS['ID']))
             else:
                 return None
+
+    def fallo(self):
+        if self.estado <= 9:
+            return 9
+        elif self.estado <= 13:
+            return 13
