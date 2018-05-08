@@ -1,4 +1,5 @@
 from simbolo import Simbolo, TOKENS
+from error import Error
 import json
 
 palabras_reservadas = ['bool','call','char','do','else','float','for',
@@ -13,7 +14,9 @@ class Lexico:
         self.inicioLex = 1                  #inicio del lexema actual
         self.Lexema = ""                    #Ultimo lexema encontrado
         self.num_linea = 1                  #numero de linea del codigo fuente
-        self.estado = 0                     #estado actual en los automatas.
+        self.estado = 0
+        self.caracteres_permitidos = "(){}[],;+-*/\\%&|!"     #estado actual en los automatas.
+        self.error = Error()
         self.cargar_palabras_reservadas()   #Cargar las palabras reservadas en
                                             #la tabla de simbolos.
 
@@ -61,6 +64,10 @@ class Lexico:
 
     def avanza_inicio_lexema(self):         #mueve el incioLex un caracter hacia
         self.inicioLex = self.index + 1     #adelante
+
+    def deshacer_automata(self):
+        self.index = self.inicioLex
+        return self.codigo[self.index]
 
     def siguiente_componente_lexico(self):  #regresa el siguiente simbolo encon-
         while(True):                        #trado en el codigo fuente.
@@ -116,15 +123,14 @@ class Lexico:
                 self.leer_lexema()
                 return Simbolo(self.Lexema, TOKENS['MAY'])
             elif self.estado == 9:
-                if c.isalpha():     # Regresa verdadero si c es una letra.
+                if c.isalpha():
                     self.estado = 10
                 else:
                     self.estado = self.fallo()
             elif self.estado == 10:
                 c = self.siguiente_caracter()
-                if c.isalnum():
-                    if not c.isalnum():
-                        self.estado = 11
+                if not c.isalnum():
+                    self.estado = 11
             elif self.estado == 11:
                 self.regresa_caracter()
                 self.leer_lexema()
@@ -133,11 +139,161 @@ class Lexico:
                     return simbolo
                 else:
                     return self.insertar_simbolo(Simbolo(self.Lexema, TOKENS['ID']))
+            elif self.estado == 12:
+                if c.isdigit():
+                    self.estado = 13
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 13:
+                c = self.siguiente_caracter()
+                if c == 'E' or c == 'e':
+                    self.estado = 16
+                elif c == '.':
+                    self.estado = 14
+                elif not c.isdigit():
+                    self.estado = 20
+            elif self.estado == 14:
+                c = self.siguiente_caracter()
+                if c.isdigit():
+                    self.estado = 15
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 15:
+                c = self.siguiente_caracter()
+                if c == 'E' or c == 'e':
+                    self.estado = 16
+                elif not c.isdigit():
+                    self.estado = 21
+            elif self.estado == 16:
+                c = self.siguiente_caracter()
+                if c == '+' or c == '-':
+                    self.estado = 17
+                elif c.isdigit():
+                    self.estado = 18
+                else:
+                    self.es = self.fallo()
+            elif self.estado == 17:
+                c = self.siguiente_caracter()
+                if c.isdigit():
+                    self.estado = 18
+                else: self.estado = self.fallo()
+            elif self.estado == 18:
+                c =self.siguiente_caracter()
+                if not c.isdigit():
+                    self.estado = 19
+            elif self.estado == 19:
+                self.regresa_caracter()
+                self.leer_lexema()
+                return Simbolo(self.Lexema, TOKENS['NUMF'])
+            elif self.estado == 20:
+                self.regresa_caracter()
+                self.leer_lexema()
+                return Simbolo(self.Lexema, TOKENS['NUM'])
+            elif self.estado == 21:
+                self.regresa_caracter()
+                self.leer_lexema()
+                return Simbolo(self.Lexema, TOKENS['NUMF'])
+            elif self.estado == 22:
+                if c == '"':
+                    self.estado = 23
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 23:
+                c = self.siguiente_caracter()
+                if c == "\\":
+                    self.estado = 24
+                elif c == '"':
+                    self.estado = 25
+            elif self.estado == 24:
+                c = self.siguiente_caracter()
+                if c in 'nta"\\r':
+                    self.estado = 23
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 25:
+                self.leer_lexema()
+                return Simbolo(self.Lexema, TOKENS['CONST_STRING'])
+            elif self.estado == 26:
+                if c == "'":
+                    self.estado = 27
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 27:
+                c = self.siguiente_caracter()
+                if c == '\\':
+                    self.estado = 28
+                else:
+                    self.estado = 29
+            elif self.estado == 28:
+                c = self.siguiente_caracter()
+                if c in "nta'\\r":
+                    self.estado = 29
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 29:
+                c = self.siguiente_caracter()
+                if c == "'":
+                    self.estado = 30
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 30:
+                self.leer_lexema()
+                return Simbolo(self.Lexema, TOKENS['CONST_CHAR'])
+            elif self.estado == 31:
+                if c == "/":
+                    self.estado = 32
+                else:
+                    self.estado = self.fallo()
+            elif self.estado == 32:
+                c = self.siguiente_caracter()
+                if c == "/":
+                    self.estado = 34
+                elif c == "*":
+                    self.estado = 33
+                else:
+                    c = self.deshacer_automata()
+                    self.estado = self.fallo()
+            elif self.estado == 33:
+                c = self.siguiente_caracter()
+                if c == "*":
+                    self.estado = 35
+            elif self.estado == 34:
+                c = self.siguiente_caracter()
+                if c == "\n" or c == "\0":
+                    self.estado = 36
+            elif self.estado == 35:
+                c = self.siguiente_caracter()
+                if c == "/":
+                    self.estado = 37
+                else:
+                    self.estado = 33
+            elif self.estado == 36:
+                self.regresa_caracter()
+                self.leer_lexema()
+            elif self.estado == 37:
+                self.leer_lexema()
+            elif self.estado == 38:
+                if c in self.caracteres_permitidos:
+                    self.leer_lexema()
+                    return Simbolo(c,ord(c))
+                else:
+                    self.estado = self.fallo()
             else:
-                return None
+                self.leer_lexema()
+                self.error.reportar_error(self.num_linea, "Lexico", "Simbolo no permitido '{}'.".format(self.Lexema))
 
     def fallo(self):
-        if self.estado < 9:
+        if self.estado <= 8:
             return 9
-        elif self.estado < 12:
+        elif self.estado <= 11:
             return 12
+        elif self.estado <= 21:
+            return 22
+        elif self.estado <= 25:
+            return 26
+        elif self.estado <= 30:
+            return 31
+        elif self.estado <= 37:
+            return 38
+        else:
+            return 99
