@@ -1,14 +1,6 @@
-int
-bool
-a
-x
-for
-3.14
-
-//comentario
-3.43E-6
-/* comentarios
-** Multilinea **
-*/
-'\n'
-"World!"
+"Hola "
++
+"mundo" - 2 *
+ 8 +
+ ( 4/
+ ) 
