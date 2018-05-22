@@ -13,12 +13,22 @@ def compara(token_esperado):
         token_esperado = ord(token_esperado)
     if complex_actual and complex_actual.Token == token_esperado:
         complex_actual = siguiente_componente_lexico()
-    elif token_esperado.Token <= 255:
-        print("ln# {}: Se esperaba: '{}'".format(num_linea(),
-        chr(token_esperado)))
+    elif token_esperado <= 255:
+        print("ln# {}: Se esperaba: '{}'".format(num_linea(),chr(token_esperado)))
     else:
         print("ln# {}: Se esperaba: '{}'".format(num_linea(),
         CONST_TOKENS[token_esperado]))
+
+def RETORNO():
+    if verifica_terminal('RETURN'):
+        compara(TOKENS['RETURN'])
+        if EXPRESION():
+            compara(';')
+            return True
+        else:
+            return False
+    else:
+        return False
 
 def EXPRESION():
     if verifica_terminal('('):
