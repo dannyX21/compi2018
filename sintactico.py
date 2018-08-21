@@ -19,6 +19,336 @@ def compara(token_esperado):
         print("ln# {}: Se esperaba: '{}'".format(num_linea(),
         CONST_TOKENS[token_esperado]))
 
+def PROGRAMA():
+    if DEFINIR_VARIABLES():
+        if DEFINIR_FUNCIONES():
+            if PRINCIPAL():
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def PRINCIPAL():
+    if verifica_terminal('MAIN'):
+        compara(TOKENS['MAIN'])
+        compara('(')
+        if PARAMETROS_FORMALES():
+            compara(')')
+            if BLOQUE():
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def DEFINIR_VARIABLES():
+    VARIABLES()
+    return True
+
+def VARIABLES():
+    if VARIABLE():
+        if VARIABLES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def VARIABLES_PRIMA():
+    if VARIABLE():
+        if VARIABLES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return True
+
+def VARIABLE():
+    if TIPO():
+        if IDENTIFICADORES():
+            compara(';')
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def TIPO():
+    if any(map(lambda x: verifica_terminal(x), ['INT', 'BOOL', 'FLOAT', 'CHAR', 'STRING', 'VOID'])):
+        compara(complex_actual.Token)
+        return True
+    else:
+        return False
+
+def IDENTIFICADORES():
+    if IDENTIFICADOR():
+        if IDENTIFICADORES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def IDENTIFICADORES_PRIMA():
+    if verifica_terminal(','):
+        compara(',')
+        if IDENTIFICADOR():
+            if IDENTIFICADORES_PRIMA():
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return True
+
+def IDENTIFICADOR():
+    if verifica_terminal('ID'):
+        compara(TOKENS['ID'])
+        if ES_ARREGLO():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def ES_ARREGLO():
+    if verifica_terminal('['):
+        compara('[')
+        compara(TOKENS['NUM'])
+        compara(']')
+    return True
+
+def DEFINIR_FUNCIONES():
+    FUNCIONES()
+    return True
+
+def FUNCIONES():
+    if FUNCION():
+        if FUNCIONES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def FUNCIONES_PRIMA():
+    if FUNCION():
+        if FUNCIONES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return True
+
+def FUNCION():
+    if verifica_terminal('FUNCTION'):
+        compara(TOKENS['FUNCTION'])
+        if TIPO():
+            compara(TOKENS['ID'])
+            compara('(')
+            if PARAMETROS_FORMALES():
+                compara(')')
+                if DEFINIR_VARIABLES():
+                    if CUERPO_FUNCION():
+                        return True
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def PARAMETROS_FORMALES():
+    PARAMETROS()
+    return True
+
+def PARAMETROS():
+    if PARAMETRO():
+        if PARAMETROS_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def PARAMETROS_PRIMA():
+    if verifica_terminal(','):
+        compara(',')
+        if PARAMETRO():
+            if PARAMETROS_PRIMA():
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return True
+
+def PARAMETRO():
+    if TIPO():
+        compara(TOKENS['ID'])
+        return True
+    else:
+        return False
+
+def CUERPO_FUNCION():
+    if BLOQUE():
+        return True
+    else:
+        return False
+
+def BLOQUE():
+    if verifica_terminal('{'):
+        compara('{')
+        if ORDENES():
+            compara('}')
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def ORDENES():
+    if ORDEN():
+        if ORDENES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def ORDENES_PRIMA():
+    if ORDEN():
+        if ORDENES_PRIMA():
+            return True
+        else:
+            return False
+    else:
+        return True
+
+def ORDEN():    #Debe aceptar 'E'?!?!?!
+    if ASIGNACION() or DECISION() or ITERACION() or ENTRADA_SALIDA() or BLOQUE() or RETORNO():
+        return True
+    else:
+        return False
+
+def ASIGNACION():
+    if DESTINO():
+        compara(TOKENS['IGU'])
+        if FUENTE():
+            compara(';')
+            return True
+        else:
+            return False
+    else:
+        return False
+
+def FUENTE():
+    if EXPRESION():
+        return True
+    else:
+        return False
+
+def DECISION():
+    if verifica_terminal('IF'):
+        compara(TOKENS['IF'])
+        compara('(')
+        if EXPRESION():
+            compara(')')
+            compara(TOKENS['THEN'])
+            if ORDEN():
+                if TIENE_ELSE():
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def TIENE_ELSE():
+    if verifica_terminal('ELSE'):
+        compara(TOKENS['ELSE'])
+        if ORDEN():
+            return True
+        else:
+            return False
+    else:
+        return True
+
+def ITERACION():
+    if verifica_terminal('FOR'):
+        compara(TOKENS['FOR'])
+        compara(TOKENS['ID'])
+        compara(TOKENS['IGU'])
+        compara(TOKENS['NUM'])
+        compara(TOKENS['TO'])
+        compara(TOKENS['NUM'])
+        if ORDEN():
+            return True
+        else:
+            return False
+    elif verifica_terminal('WHILE'):
+        compara(TOKENS['WHILE'])
+        compara('(')
+        if EXPRESION_LOGICA():
+            compara(')')
+            compara(TOKENS['DO'])
+            if ORDEN():
+                return True
+            else:
+                return False
+        else:
+            return False
+    elif verifica_terminal('DO'):
+        compara(TOKENS['DO'])
+        if ORDEN():
+            compara(TOKENS['WHILE'])
+            compara('(')
+            if EXPRESION_LOGICA():
+                compara(')')
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def ENTRADA_SALIDA():
+    if verifica_terminal('READ'):
+        compara(TOKENS['READ'])
+        compara('(')
+        if DESTINO():
+            compara(')')
+            compara(';')
+            return True
+        else:
+            return False
+    elif verifica_terminal('WRITE'):
+        compara(TOKENS['WRITE'])
+        compara('(')
+        if EXPRESION():
+            compara(')')
+            compara(';')
+            return True
+        else:
+            return False
+    else:
+        return False
+
 def RETORNO():
     if verifica_terminal('RETURN'):
         compara(TOKENS['RETURN'])
@@ -273,7 +603,7 @@ for linea in codigo.split('\n'):
     ln += 1
 lex = Lexico(codigo)
 complex_actual = siguiente_componente_lexico()
-if not EXPRESION():
-    print("Ln# {}: Error Sintactico: Se esperaba una expresion.".format(lex.num_linea))
+if not PROGRAMA():
+    print("Ln# {}: Se encontraron errores.".format(lex.num_linea))
 else:
     print("Compilacion exitosa!")

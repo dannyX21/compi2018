@@ -1,1 +1,9 @@
-a <= b | 
+string s;
+function string sayHello() {
+write("Hello World!");
+}
+main()
+{
+  if (s = "a")
+    s = call sayHello()
+}
