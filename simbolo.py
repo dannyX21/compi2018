@@ -1,7 +1,8 @@
 class Simbolo:
-    def __init__(self, lexema, token):
+    def __init__(self, lexema, token, tipo=0):
         self.Lexema = lexema
         self.Token = token
+        self.Tipo = tipo
 
     def __repr__(self):
         return ("Lexema: " + self.Lexema).ljust(20) + ("Token: " +
@@ -41,6 +42,33 @@ TOKENS = {
     'FALSE' : 286,
     'TRUE' : 287
     }
+
+TIPO_DATO = {
+    'na': 0,
+    'int': 1,
+    'bool': 2,
+    'float': 3,
+    'char': 4, 
+    'string': 5,
+    'arr_int': 6,
+    'arr_bool': 7,
+    'arr_float': 8,
+    'arr_char': 9,
+    'arr_string': 10,
+    'func_int': 11,
+    'func_bool': 12,
+    'func_float': 13,
+    'func_char': 14,
+    'func_string': 15,
+    'func_void': 16,
+}
+
+ZONA_DE_CODIGO = {
+    'DEF_VARIABLES_GLOBALES': 0,
+    'DEF_VARIABLES_LOCALES': 1,
+    'CUERPO_FUNCION_LOCAL': 2,
+    'CUERPO_PRINCIPAL': 3
+}
 
 CONST_TOKENS = {}
 for key,value in TOKENS.items():

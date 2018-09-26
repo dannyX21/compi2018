@@ -1,4 +1,4 @@
-from simbolo import Simbolo, TOKENS
+from simbolo import Simbolo, TOKENS, ZONA_DE_CODIGO, TIPO_DATO
 from error import Error
 import json
 
@@ -16,9 +16,24 @@ class Lexico:
         self.num_linea = 1                  #numero de linea del codigo fuente
         self.estado = 0
         self.caracteres_permitidos = "(){}[],;+-*/\\%&|!"     #estado actual en los automatas.
+        self.tipo_de_dato_actual = 0  # Registra el tipo de dato de los identificadores.
+
+        self.zona_de_codigo = ZONA_DE_CODIGO['DEF_VARIABLES_GLOBALES']  # Indica la zona del codigo
+        # fuente que se esa procesando.
+
+        self.fin_definicion_palabras_reservadas = None  # Indica donde termina la definicion de
+        # Palabra Reservadas
+        self.fin_definicion_variables_globales = None  # Inidica donde termina la definicion de
+        # Variables Globales
+        self.inicio_definicion_variables_locales = None  # Indica donde inicia la definicion de
+        # Variables Locales en la funcion actual
+        self.fin_definicion_variables_locales = None  # Indica donde finaliza la definicion de
+        # Variables locales en la funcion actual
+
         self.error = Error()
         self.cargar_palabras_reservadas()   #Cargar las palabras reservadas en
                                             #la tabla de simbolos.
+
 
     def insertar_simbolo(self, simbolo):    #inserta un nuevo simbolor en la TS.
         if simbolo:
@@ -30,14 +45,42 @@ class Lexico:
     def cargar_palabras_reservadas(self):   #Carga las palabras reservadas en TS
         for p in palabras_reservadas:
             self.insertar_simbolo(Simbolo(p, TOKENS[p.upper()]))
+        self.fin_definicion_palabras_reservadas = len(self.tablaSimb)
 
     def mostrar_tabla_simbolos(self):       #muestra el contenido de la TS.
         for s in self.tablaSimb:
             print(s)
 
     def buscar_lexema(self, lexema):        #busca un lexema en la TS.
-            simb = [s for s in self.tablaSimb if lexema == s.Lexema]
-            return simb[0] if len(simb)>0 else None
+        if self.zona_de_codigo == ZONA_DE_CODIGO['DEF_VARIABLES_GLOBALES']:
+            for simb in self.tablaSimb:
+                if lexema == simb.Lexema:
+                    return simb
+            return None
+
+        elif self.zona_de_codigo == ZONA_DE_CODIGO['DEF_VARIABLES_LOCALES']:
+            for simb in self.tablaSimb[self.inicio_definicion_variables_locales:]:
+                if lexema == simb.Lexema:
+                    return simb
+            for simb in self.tablaSimb[:self.fin_definicion_palabras_reservadas]:
+                if lexema == simb.Lexema:
+                    return simb
+            return None
+
+        elif self.zona_de_codigo == ZONA_DE_CODIGO['CUERPO_FUNCION_LOCAL']:
+            for simb in self.tablaSimb[self.inicio_definicion_variables_locales:]:
+                if lexema == simb.Lexema:
+                    return simb
+            for simb in self.tablaSimb[:self.fin_definicion_variables_globales]:
+                if lexema == simb.Lexema:
+                    return simb
+            return None
+            
+        elif self.zona_de_codigo == ZONA_DE_CODIGO['CUERPO_PRINCIPAL']:
+            for simb in self.tablaSimb[:self.fin_definicion_variables_globales]:
+                if lexema == simb.Lexema:
+                    return simb
+            return None
 
     def tablaSimb2JSON(self):               #regresa el contenido de TS en JSON
         return json.dumps([obj.__dict__ for obj in self.tablaSimb])
@@ -134,11 +177,22 @@ class Lexico:
             elif self.estado == 11:
                 self.regresa_caracter()
                 self.leer_lexema()
-                simbolo = self.buscar_lexema(self.Lexema)
-                if simbolo:
-                    return simbolo
-                else:
-                    return self.insertar_simbolo(Simbolo(self.Lexema, TOKENS['ID']))
+                simb = self.buscar_lexema(self.Lexema)
+                
+                if self.zona_de_codigo == 0 or self.zona_de_codigo == 1:
+                    if simb and simb.Token != TOKENS['ID']:
+                        return simb
+                    elif simb is None:
+                        return self.insertar_simbolo(Simbolo(self.Lexema, TOKENS['ID'], self.tipo_de_dato_actual))
+                    elif simb.Token == TOKENS['ID']:
+                        self.error.reportar_error(self.num_linea, "Semantico", "La variable '{}' ya fue definida en el ambito actual.".format(self.Lexema))
+                        return simb
+                elif self.zona_de_codigo == 2 or self.zona_de_codigo == 3:
+                    if simb:
+                        return simb
+                    else:
+                        self.error.reportar_error(self.num_linea, "Semantico", "La variable '{}' no fue declarada.".format(self.Lexema))
+                        return self.insertar_simbolo(Simbolo(self.Lexema, TOKENS['ID'], TIPO_DATO['na']))
             elif self.estado == 12:
                 if c.isdigit():
                     self.estado = 13

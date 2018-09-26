@@ -1,5 +1,5 @@
 from lexico import Lexico
-from simbolo import CONST_TOKENS, TOKENS
+from simbolo import CONST_TOKENS, TOKENS, TIPO_DATO, ZONA_DE_CODIGO
 
 def siguiente_componente_lexico():
     return lex.siguiente_componente_lexico()
@@ -34,6 +34,9 @@ def PROGRAMA():
 def PRINCIPAL():
     if verifica_terminal('MAIN'):
         compara(TOKENS['MAIN'])
+        if not lex.fin_definicion_variables_globales:
+            lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_PRINCIPAL']
+            lex.fin_definicion_palabras_reservadas = len(lex.tablaSimb)
         compara('(')
         if PARAMETROS_FORMALES():
             compara(')')
@@ -80,6 +83,7 @@ def VARIABLE():
 
 def TIPO():
     if any(map(lambda x: verifica_terminal(x), ['INT', 'BOOL', 'FLOAT', 'CHAR', 'STRING', 'VOID'])):
+        lex.tipo_de_dato_actual = TIPO_DATO[complex_actual.Lexema]
         compara(complex_actual.Token)
         return True
     else:
@@ -149,13 +153,20 @@ def FUNCIONES_PRIMA():
 def FUNCION():
     if verifica_terminal('FUNCTION'):
         compara(TOKENS['FUNCTION'])
+        if not lex.fin_definicion_variables_globales:
+            lex.fin_definicion_variables_globales = len(lex.tablaSimb)
         if TIPO():
             compara(TOKENS['ID'])
             compara('(')
+            lex.zona_de_codigo = ZONA_DE_CODIGO['DEF_VARIABLES_LOCALES']
+            lex.inicio_definicion_variables_locales = len(lex.tablaSimb)            
             if PARAMETROS_FORMALES():
                 compara(')')
                 if DEFINIR_VARIABLES():
+                    lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_FUNCION_LOCAL']
+                    lex.fin_definicion_variables_locales = len(lex.tablaSimb)
                     if CUERPO_FUNCION():
+                        lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_PRINCIPAL']
                         return True
                     else:
                         return False
@@ -607,3 +618,16 @@ if not PROGRAMA():
     print("Ln# {}: Se encontraron errores.".format(lex.num_linea))
 else:
     print("Compilacion exitosa!")
+
+print("Tabla de Simbolos:")
+print("Token\tTipo\tLexema")
+for complex in lex.tablaSimb:
+    print("{}\t{}\t{}".format(CONST_TOKENS[complex.Token], complex.Tipo, complex.Lexema))
+
+print("\n")
+if lex.error.total > 0:
+    print("Se encontraron: {} errores.".format(lex.error.total))
+    for e in lex.error.errores:
+        print(e)
+
+
