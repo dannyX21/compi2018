@@ -1,15 +1,28 @@
-int a, b, c;
-bool x, y;
-string x;
+int x, y;
+float res;
+bool x;
 
-function float suma(float a, float b)
-float x;
-string a;
+function float division(int x, int y)
+float res, total;
 {
-  x = a + b;
+  res = x / y;
+  return res;
 }
 
-main ()
+function int modulo(int x, int y)
+float res;
 {
-  m = a + b;
+  res = x \ y;
+  return res;
+}
+
+main()
+{
+  x = 8;
+  y = 3;
+  res = call division(x, y);
+  write(res);
+  res = call modulo(x, y);
+  write(res);
+  write(total);
 }

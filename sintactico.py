@@ -35,8 +35,9 @@ def PRINCIPAL():
     if verifica_terminal('MAIN'):
         compara(TOKENS['MAIN'])
         if not lex.fin_definicion_variables_globales:
-            lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_PRINCIPAL']
             lex.fin_definicion_palabras_reservadas = len(lex.tablaSimb)
+
+        lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_PRINCIPAL']
         compara('(')
         if PARAMETROS_FORMALES():
             compara(')')
@@ -166,7 +167,7 @@ def FUNCION():
                     lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_FUNCION_LOCAL']
                     lex.fin_definicion_variables_locales = len(lex.tablaSimb)
                     if CUERPO_FUNCION():
-                        lex.zona_de_codigo = ZONA_DE_CODIGO['CUERPO_PRINCIPAL']
+                        lex.zona_de_codigo = ZONA_DE_CODIGO['DEF_VARIABLES_GLOBALES']
                         return True
                     else:
                         return False
@@ -617,9 +618,9 @@ complex_actual = siguiente_componente_lexico()
 if not PROGRAMA():
     print("Ln# {}: Se encontraron errores.".format(lex.num_linea))
 else:
-    print("Compilacion exitosa!")
+    print("\nCompilacion exitosa!")
 
-print("Tabla de Simbolos:")
+print("\nTabla de Simbolos:")
 print("Token\tTipo\tLexema")
 for complex in lex.tablaSimb:
     print("{}\t{}\t{}".format(CONST_TOKENS[complex.Token], complex.Tipo, complex.Lexema))
