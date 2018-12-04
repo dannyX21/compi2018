@@ -1,28 +1,8 @@
-int x, y;
-float res;
-bool x;
-
-function float division(int x, int y)
-float res, total;
-{
-  res = x / y;
-  return res;
-}
-
-function int modulo(int x, int y)
-float res;
-{
-  res = x \ y;
-  return res;
-}
-
+float area, b, h;
 main()
 {
-  x = 8;
-  y = 3;
-  res = call division(x, y);
-  write(res);
-  res = call modulo(x, y);
-  write(res);
-  write(total);
+    b = 5.5;
+    h = 2 * (3 + 1) / 2;
+    area = b * h / 2;
+    write("Area: " + area);
 }

@@ -1,5 +1,6 @@
 from lexico import Lexico
 from simbolo import CONST_TOKENS, TOKENS, TIPO_DATO, ZONA_DE_CODIGO
+from semantico import Semantico
 
 def siguiente_componente_lexico():
     return lex.siguiente_componente_lexico()
@@ -257,7 +258,10 @@ def ORDEN():    #Debe aceptar 'E'?!?!?!
 def ASIGNACION():
     if DESTINO():
         compara(TOKENS['IGU'])
+        TAC = semantico.pop() + " := "
         if FUENTE():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
             compara(';')
             return True
         else:
@@ -374,8 +378,13 @@ def RETORNO():
 
 def EXPRESION():
     if verifica_terminal('('):
+        temp = semantico.gen_temp()
+        TAC = "{} := ".format(temp)
         compara('(')
         if EXPRESION():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temp)
             compara(')')
             return True
         else:
@@ -399,8 +408,14 @@ def EXPRESION_LOGICA():
 
 def EXPRESION_LOGICA_PRIMA():
     if(is_OPLOG(complex_actual)):
+        operador = complex_actual.Lexema
+        temp = semantico.gen_temp()
+        TAC = "{} := {} {} ".format(temp, semantico.pop(), operador)
         compara(complex_actual.Token)
         if TERMINO_LOGICO():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temp)
             if EXPRESION_LOGICA_PRIMA():
                 return True
             else:
@@ -434,7 +449,12 @@ def TERMINO_LOGICO():
     if verifica_terminal('!'):
         compara('!')
         compara('(')
+        temp = semantico.gen_temp()
+        TAC = "{} := ! ".format(temp)
         if EXPRESION_LOGICA() or EXPRESION_RELACIONAL():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temp)
             compara(')')
             return True
         else:
@@ -454,8 +474,14 @@ def EXPRESION_RELACIONAL():
 
 def EXPRESION_RELACIONAL_PRIMA():
     if is_OPREL(complex_actual):
+        operador = complex_actual.Lexema
+        temp = semantico.gen_temp()
+        TAC = "{} := {} {} ".format(temp, semantico.pop(), operador)
         compara(complex_actual.Token)
         if EXPRESION_ARITMETICA():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temp)
             if EXPRESION_RELACIONAL_PRIMA():
                 return True
             else:
@@ -476,8 +502,14 @@ def EXPRESION_ARITMETICA():
 
 def EXPRESION_ARITMETICA_PRIMA():
     if is_OPSUMRES(complex_actual):
+        operador = complex_actual.Lexema
+        temporal = semantico.gen_temp()
+        TAC = "{} := {} {} ".format(temporal, semantico.pop(), operador) 
         compara(complex_actual.Token)
         if TERMINO_ARITMETICO():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temporal)
             if EXPRESION_ARITMETICA_PRIMA():
                 return True
             else:
@@ -498,8 +530,14 @@ def TERMINO_ARITMETICO():
 
 def TERMINO_ARITMETICO_PRIMA():
     if is_OPMULDIV(complex_actual):
+        operador = complex_actual.Lexema
+        temp = semantico.gen_temp()
+        TAC = "{} := {} {} ".format(temp, semantico.pop(), operador)
         compara(complex_actual.Token)
         if FACTOR_ARIMETICO():
+            TAC += semantico.pop()
+            semantico.agregar_linea_3ac(TAC)
+            semantico.push(temp)
             if TERMINO_ARITMETICO_PRIMA():
                 return True
             else:
@@ -524,6 +562,7 @@ def FACTOR_ARIMETICO():
 
 def OPERANDO():
     if verifica_terminal('NUM') or verifica_terminal('NUMF') or verifica_terminal('CONST_CHAR') or verifica_terminal('CONST_STRING') or verifica_terminal('TRUE') or verifica_terminal('FALSE'):
+        semantico.push(complex_actual.Lexema)
         compara(complex_actual.Token)
         return True
     elif verifica_terminal('('):
@@ -577,6 +616,7 @@ def ACTUAL():
 
 def DESTINO():
     if verifica_terminal('ID'):
+        semantico.push(complex_actual.Lexema)
         compara(TOKENS['ID'])
         if ELEMENTO_ARREGLO():
             return True
@@ -613,22 +653,21 @@ ln = 1
 for linea in codigo.split('\n'):
     print("{}: {}".format(ln, linea))
     ln += 1
+
 lex = Lexico(codigo)
 complex_actual = siguiente_componente_lexico()
+
+
+semantico = Semantico()
+
 if not PROGRAMA():
     print("Ln# {}: Se encontraron errores.".format(lex.num_linea))
 else:
     print("\nCompilacion exitosa!")
 
-print("\nTabla de Simbolos:")
-print("Token\tTipo\tLexema")
-for complex in lex.tablaSimb:
-    print("{}\t{}\t{}".format(CONST_TOKENS[complex.Token], complex.Tipo, complex.Lexema))
+semantico.generar_archivo_3ac()
 
-print("\n")
 if lex.error.total > 0:
     print("Se encontraron: {} errores.".format(lex.error.total))
     for e in lex.error.errores:
         print(e)
-
-
